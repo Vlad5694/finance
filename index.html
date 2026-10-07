@@ -3179,6 +3179,8 @@ function srOpen(page){
   try{ srCleanup = null; }catch(e){}
   if(!srOv){ srOv = mk('div', 'sr-ov ov-x'); srOv._close = ()=>{ srPage === 'menu' ? srClose() : srOpen('menu'); }; document.body.appendChild(srOv); }
   srPage = page;
+  // Пульсар — на весь экран: тёмный полноэкранный режим страницы игры.
+  if(page === 'pulsar') srOv.classList.add('sr-pul'); else srOv.classList.remove('sr-pul');
   srOv.innerHTML = ''; srOv.scrollTop = 0;
   if(srKey){ document.removeEventListener('keydown', srKey); srKey = null; }
   const inn = mk('div', 'sr-in'); srOv.appendChild(inn);
@@ -5660,7 +5662,24 @@ function pulsarEnsureCss(){
    + '.pul-ov .new{color:var(--accent);font-weight:800;}'
    + '.pul-banner{min-height:2.6em;margin-top:8px;text-align:center;font-size:.92rem;line-height:1.35;max-width:420px;}'
    + '.pul-steps{font-size:.75rem;color:var(--muted);text-align:center;letter-spacing:.15em;}'
-   + 'html.eink canvas.pul-cv{background:#fff !important;border:2px solid #000 !important;}';
+   + 'html.eink canvas.pul-cv{background:#fff !important;border:2px solid #000 !important;}'
+   // Пульсар на весь экран: страница занимает всё окно, холст тянется по вьюпорту.
+   + '.sr-ov.sr-pul{background:#05060d;padding-left:12px;padding-right:12px;}'
+   + '.sr-ov.sr-pul .sr-in{max-width:none;width:100%;}'
+   + '.sr-ov.sr-pul .sr-head h2{color:#eef1ff;}'
+   + '.sr-ov.sr-pul .back-btn{color:#cdd3f5;}'
+   + '.sr-ov.sr-pul .pul-title{color:#eef1ff;}'
+   + '.sr-ov.sr-pul .hint,.sr-ov.sr-pul .pul-hud,.sr-ov.sr-pul .pul-banner,.sr-ov.sr-pul .pul-steps{color:#a7aed3;}'
+   + '.sr-ov.sr-pul .pul-hud b{color:#eef1ff;}'
+   + '.sr-ov.sr-pul .pul-hud,.sr-ov.sr-pul .pul-banner{max-width:min(96vw,720px);}'
+   + '.sr-ov.sr-pul .pul-stage{width:100%;}'
+   + '.sr-ov.sr-pul .pul-stage canvas.pul-cv{max-width:min(96vw,calc(100vh - 230px));border-color:#232852;}'
+   + '.sr-ov.sr-pul .sr-in{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;}'
+   + '.sr-ov.sr-pul .sr-in{justify-content:safe center;}'
+   + '.sr-ov.sr-pul .sr-head{align-self:flex-start;width:100%;}'
+   + '.sr-ov.sr-pul .pul-title{font-size:1.6rem;margin-top:4px;}'
+   + '.sr-ov.sr-pul canvas.pul-demo{max-width:min(72vw,calc(100vh - 380px));}'
+   + '.sr-ov.sr-pul .pul-ov{max-width:min(96vw,calc(100vh - 230px));}';
   document.head.appendChild(st);
 }
 // Меню игры: демо-фон (ИИ держит резонанс), кнопки, обучение по выбору.
@@ -5670,12 +5689,15 @@ function pulsarMenu(inn){
   inn.appendChild(mk('div','pul-title','🌀 ПУЛЬСАР'));
   const best = (META.stat && META.stat.pulsarBest) || 0, runs = (META.stat && META.stat.pulsarRuns) || 0;
   inn.appendChild(mk('div','hint', runs ? t('Рекорд: {0}', best) + ' · ' + t('Заходов: {0}', runs) : t('Держи резонанс: кольца сходятся к ядру.')));
-  const cv = mk('canvas','pul-cv pul-demo'); cv.width = cv.height = 300; inn.appendChild(cv);
+  const cv = mk('canvas','pul-cv pul-demo'); cv.width = cv.height = 480; inn.appendChild(cv);
   const hud = mk('div','pul-hud'); inn.appendChild(hud);
   const ctl = mk('div','pul-ctl'); inn.appendChild(ctl);
   const bPlay = mk('button','pri', t('▶ Играть'));
   const bTut = mk('button','', t('🎓 Обучение') + ((META.stat && META.stat.pulsarTut) ? ' ✓' : ''));
-  ctl.appendChild(bPlay); ctl.appendChild(bTut);
+  ctl.appendChild(bPlay); ctl.appendChild(bTut);
+  // Выход из «Пульсара» — сразу в хаб «Врата Подземелья», минуя внутреннее меню игры.
+  const bExitM = mk('button','', t('🚪 Выйти')); ctl.appendChild(bExitM);
+  bExitM.addEventListener('click', ()=>{ try{ srOpen('menu'); }catch(e){} });
   bPlay.addEventListener('click', ()=>pulsarGame(inn, 'play'));
   bTut.addEventListener('click', ()=>pulsarGame(inn, 'tut'));
   inn.appendChild(mk('div','pul-steps', (META.stat && META.stat.pulsarTut) ? t('Обучение пройдено — можно повторить в любой момент.') : t('Обучение необязательно: его можно пропустить и вернуться позже.')));
@@ -5688,12 +5710,16 @@ function pulsarGame(inn, mode){
   pulsarEnsureCss();
   inn.innerHTML = '';
   const stage = mk('div','pul-stage'); inn.appendChild(stage);
-  const cv = mk('canvas','pul-cv'); cv.width = cv.height = 420; stage.appendChild(cv);
+  const sz = Math.max(360, Math.min(768, Math.round(Math.min(window.innerWidth - 24, window.innerHeight - 230))));
+  const cv = mk('canvas','pul-cv'); cv.width = cv.height = sz; stage.appendChild(cv);
   const hud = mk('div','pul-hud'); inn.appendChild(hud);
   const banner = mk('div','pul-banner'); inn.appendChild(banner);
   const ctl = mk('div','pul-ctl'); inn.appendChild(ctl);
   const bMenu = mk('button','', t('🏠 В меню')); ctl.appendChild(bMenu);
-  bMenu.addEventListener('click', ()=>pulsarMenu(inn));
+  bMenu.addEventListener('click', ()=>pulsarMenu(inn));
+  // Прямой выход из запущенной игры — в хаб «Врата Подземелья» (двигатель гасится).
+  const bExit = mk('button','', t('🚪 Выйти')); ctl.appendChild(bExit);
+  bExit.addEventListener('click', ()=>{ if(pulsarStop){ try{ pulsarStop(); }catch(e){} pulsarStop = null; } try{ srOpen('menu'); }catch(e){} });
   if(mode === 'tut'){
     const bSkip = mk('button','', t('Пропустить обучение')); ctl.appendChild(bSkip);
     bSkip.addEventListener('click', ()=>{ toast(t('Обучение пропущено — вернуться можно в любой момент.'), 3000); pulsarMenu(inn); });
@@ -5926,18 +5952,26 @@ function pulsarEngine(cv, hud, mode, ui){
       const row = mk('div', 'pul-ctl');
       const b1 = mk('button', 'pri', t('Ещё раз') + ' (пробел)');
       const b2 = mk('button', '', t('🏠 В меню'));
+
+      const b3 = mk('button', '', t('🚪 Выйти'));
       b1.addEventListener('click', ()=>pulsarGame(ui.inn, 'play'));
       b2.addEventListener('click', ()=>pulsarMenu(ui.inn));
-      row.appendChild(b1); row.appendChild(b2); ov.appendChild(row);
+
+      b3.addEventListener('click', ()=>{ if(pulsarStop){ try{ pulsarStop(); }catch(e){} pulsarStop = null; } try{ srOpen('menu'); }catch(e){} });
+      row.appendChild(b1); row.appendChild(b2); row.appendChild(b3); ov.appendChild(row);
     } else {
       ov.appendChild(mk('div', 'big', t('🎓 Обучение пройдено!')));
       ov.appendChild(mk('div', '', t('Вернуться к нему можно в любой момент — оно не запускается само.')));
       const row = mk('div', 'pul-ctl');
       const b1 = mk('button', 'pri', t('▶ Играть'));
       const b2 = mk('button', '', t('🏠 В меню'));
+
+      const b3 = mk('button', '', t('🚪 Выйти'));
       b1.addEventListener('click', ()=>pulsarGame(ui.inn, 'play'));
       b2.addEventListener('click', ()=>pulsarMenu(ui.inn));
-      row.appendChild(b1); row.appendChild(b2); ov.appendChild(row);
+
+      b3.addEventListener('click', ()=>{ if(pulsarStop){ try{ pulsarStop(); }catch(e){} pulsarStop = null; } try{ srOpen('menu'); }catch(e){} });
+      row.appendChild(b1); row.appendChild(b2); row.appendChild(b3); ov.appendChild(row);
     }
     ui.stage.appendChild(ov);
   }
@@ -6051,7 +6085,7 @@ Object.assign(EN, {
   'Обучение необязательно: его можно пропустить и вернуться позже.':'Tutorial is optional: skip it now, return later.',
   'Управление: курсор или палец по кругу, либо ← и →. После смерти — «Ещё раз» или пробел.':'Controls: cursor or finger around, or ← and →. After death — “Retry” or Space.',
   '🎓 Обучение пройдено!':'🎓 Tutorial completed!','Вернуться к нему можно в любой момент — оно не запускается само.':'You can return any time — it never starts on its own.',
-  '🏠 В меню':'🏠 To menu','🔁 Заново':'🔁 Restart','Ещё раз':'Retry','звук':'sound',
+  '🏠 В меню':'🏠 To menu','🚪 Выйти':'🚪 Exit','🔁 Заново':'🔁 Restart','Ещё раз':'Retry','звук':'sound',
   'Рекорд: {0}':'Best: {0}','Заходов: {0}':'Runs: {0}','очков':'pts','демо':'demo','рекорд':'best',
   'шаг {0} из 4':'step {0} of 4','НОВЫЙ РЕКОРД!':'NEW RECORD!',
   'Проходов: {0} · лучшая цепь: {1}':'Passes: {0} · best chain: {1}',
