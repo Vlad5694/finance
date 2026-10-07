@@ -945,6 +945,12 @@ html.eink .joy-stick{background:#000 !important;box-shadow:none !important;}
       </div>
     </div>
 
+    <div class="game-pin" id="pulsarPin" role="button" tabindex="0" style="cursor:pointer" title="Открыть игру «Пульсар»">
+      <span class="ic">🌀</span>
+      <span class="tx"><b>Пульсар</b><small>Держи резонанс: кольца сходятся к ядру</small></span>
+      <span style="margin-left:auto;padding-left:8px;color:var(--muted);">▶</span>
+    </div>
+
     <div class="card health" id="healthCard">
       <div class="hc-top">
         <div class="hc-ring">
@@ -3213,7 +3219,8 @@ function srMenu(inn){
   const off = (REMOTE_GAMES && REMOTE_GAMES.off) || [];
   // Хаб Врат: главы-файтинг и Магазин ЗАПЕРТЫ до принятия Системы.
   const locked = !(typeof sysDungeonAllowed === 'function' && sysDungeonAllowed());
-  const items = [['⚔️','Врата Подземелья','Боссы манхвы и волны монстров','dungeon', locked],
+  const items = [['🌀','Пульсар','Держи резонанс: кольца сходятся к ядру','pulsar', false],
+                 ['⚔️','Врата Подземелья','Боссы манхвы и волны монстров','dungeon', locked],
                  ['🛒','Магазин Системы','Кинжалы, плащи и эликсиры за монеты','shop', locked],
                  ['🎨','Секретные темы','Коллекция открывается сама — ищите способы','themes', false]];
   // Спрятанные игры попадают в меню только после первой находки — НАВСЕГДА.
@@ -3221,7 +3228,7 @@ function srMenu(inn){
       if(isLocked){ toast(t('Сначала примите Систему: включите тумблер и нажмите «ДА»'), 3000); return; }
       srOpen(id);
     }catch(e){ try{ toast(t('Не удалось открыть: {0}', id), 2200); }catch(x){} } };
-  Object.keys(HUNT_GAMES).forEach(id=>{ if(gameFound(id)) items.push([HUNT_GAMES[id].ic, HUNT_GAMES[id].n, HUNT_GAMES[id].d, id, false]); });
+  Object.keys(HUNT_GAMES).forEach(id=>{ if(gameFound(id) && id !== 'pulsar') items.push([HUNT_GAMES[id].ic, HUNT_GAMES[id].n, HUNT_GAMES[id].d, id, false]); });
   (REMOTE_GAMES || []).forEach(g=>items.push([g.ic, g.n, g.d, g.id, false]));
   items.filter(a=>off.indexOf(a[3]) < 0).forEach(a=>{
     const b = mk('button', 'sr-item'); b.appendChild(mk('span', 'ic', a[0]));
@@ -4861,6 +4868,9 @@ function sysRender(){
   sysWin.scrollTop = keep;
 }
 (function(){ const m = document.getElementById('sysMini'); m.addEventListener('click', sysOpen); m.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' ') sysOpen(); }); })();
+
+// 🌀 «Пульсар» на главном экране: плашка-карточка ведёт прямо в игру.
+(function(){ const p = document.getElementById('pulsarPin'); if(!p) return; const go = ()=>{ try{ srOpen('pulsar'); }catch(e){ try{ toast(t('Не удалось открыть: {0}', 'pulsar'), 2200); }catch(x){} } }; p.addEventListener('click', go); p.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } }); })();
 { const _sv = showView; showView = function(v){ _sv.apply(this, arguments); try{ if(v === 'analytics') sysEvent('analytics'); if(v === 'converter') sysEvent('converter'); }catch(e){} }; }
 document.getElementById('snapshotBtn').addEventListener('click', ()=>{ try{ sysEvent('snapshot'); }catch(e){} });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sysEvalGuard(); });
@@ -5618,7 +5628,7 @@ GAME_PAGES.snake = function(inn){
 // =====================================================================
 GAME_TITLES.pulsar = '🌀 Пульсар';
 const PULSAR_TUT = [
-  'Веди курсором или пальцем по кругу. Можно стрелками ← и →.',
+  'Веди пальцем или курсором по кругу, кнопками ◀ ▶ или стрелками ← и →.',
   'Кольца сходятся к ядру. Проходи сквозь щель — засчитается проход.',
   'Золотое кольцо даёт +75. Цепочка проходов поднимает множитель до ×5.',
   'Каждые 10 проходов — ВСПЛЕСК: два прохода за раз. Всё — жми «Готово»!'
@@ -5679,7 +5689,13 @@ function pulsarEnsureCss(){
    + '.sr-ov.sr-pul .sr-head{align-self:flex-start;width:100%;}'
    + '.sr-ov.sr-pul .pul-title{font-size:1.6rem;margin-top:4px;}'
    + '.sr-ov.sr-pul canvas.pul-demo{max-width:min(72vw,calc(100vh - 380px));}'
-   + '.sr-ov.sr-pul .pul-ov{max-width:min(96vw,calc(100vh - 230px));}';
+   + '.sr-ov.sr-pul .pul-ov{max-width:min(96vw,calc(100vh - 230px));}'
+    + '.pul-touch{display:none;gap:12px;width:100%;max-width:min(96vw,720px);margin-top:8px;justify-content:center;}'
+    + '.pul-touch button{flex:1;max-width:170px;min-height:64px;font-size:1.7rem;line-height:1;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}'
+    + '.pul-touch button.on,.pul-touch button:active{background:color-mix(in srgb,var(--accent) 40%,var(--panel-2));transform:scale(.97);}'
+    + '.sr-ov.sr-pul .pul-touch button{background:#141730;border-color:#232852;color:#eef1ff;}'
+    + 'html.eink .pul-touch button{background:#fff !important;border:2px solid #000 !important;color:#000 !important;}'
+    + '@media (pointer:coarse),(hover:none){.pul-touch{display:flex;} .sr-ov.sr-pul .pul-stage canvas.pul-cv{max-width:min(96vw,calc(100vh - 330px));} .sr-ov.sr-pul .pul-ov{max-width:min(96vw,calc(100vh - 330px));}}';
   document.head.appendChild(st);
 }
 // Меню игры: демо-фон (ИИ держит резонанс), кнопки, обучение по выбору.
@@ -5701,7 +5717,7 @@ function pulsarMenu(inn){
   bPlay.addEventListener('click', ()=>pulsarGame(inn, 'play'));
   bTut.addEventListener('click', ()=>pulsarGame(inn, 'tut'));
   inn.appendChild(mk('div','pul-steps', (META.stat && META.stat.pulsarTut) ? t('Обучение пройдено — можно повторить в любой момент.') : t('Обучение необязательно: его можно пропустить и вернуться позже.')));
-  inn.appendChild(mk('div','hint', t('Управление: курсор или палец по кругу, либо ← и →. После смерти — «Ещё раз» или пробел.')));
+  inn.appendChild(mk('div','hint', t('Управление: палец или курсор по кругу, кнопки ◀ ▶ на экране или ← и →. После смерти — «Ещё раз» или пробел.')));
   pulsarEngine(cv, hud, 'demo', {});
 }
 // Экран игры/обучения. Обучение НЕ запускается само — только этой кнопкой.
@@ -6063,14 +6079,38 @@ function pulsarEngine(cv, hud, mode, ui){
     try{ document.removeEventListener('keydown', keyH); }catch(e){}
     try{ document.removeEventListener('keyup', keyU); }catch(e){}
     try{ cv.removeEventListener('pointerdown', onP); }catch(e){}
-    try{ cv.removeEventListener('pointermove', onP); }catch(e){}
+    try{ cv.removeEventListener('pointermove', onP); }catch(e){}
+    if(tRow){ try{ if(tRow.parentNode) tRow.parentNode.removeChild(tRow); }catch(e){} tRow = null; }
   }
   pulsarStop = stop;
   try{ srCleanup = function(){ try{ stop(); }catch(e){} }; }catch(e){}
   if(!demo){ document.addEventListener('keydown', keyH); document.addEventListener('keyup', keyU); }
   cv.addEventListener('pointerdown', onP);
   cv.addEventListener('pointermove', onP);
-  cv.addEventListener('pointerleave', ()=>{ S.ptr = null; });
+  cv.addEventListener('pointerleave', ()=>{ S.ptr = null; });
+  // ——— сенсорное управление: крупные кнопки ◀ ▶ под холстом (видны на тач-устройствах).
+  var tRow = null;
+  if(!demo && ui && ui.stage){
+    tRow = mk('div', 'pul-touch');
+    const spinBtn = (txt, key) =>{
+      const b = mk('button', '', txt);
+      b.addEventListener('pointerdown', e=>{
+        try{ if(e.cancelable) e.preventDefault(); }catch(err){}
+        try{ if(b.setPointerCapture && e.pointerId != null) b.setPointerCapture(e.pointerId); }catch(err){}
+        S[key] = true; b.classList.add('on');
+      });
+      const off = ()=>{ S[key] = false; b.classList.remove('on'); };
+      b.addEventListener('pointerup', off);
+      b.addEventListener('pointercancel', off);
+      b.addEventListener('pointerleave', off);
+      b.addEventListener('lostpointercapture', off);
+      b.addEventListener('contextmenu', e=>{ e.preventDefault(); });
+      return b;
+    };
+    tRow.appendChild(spinBtn('◀', 'spinL'));
+    tRow.appendChild(spinBtn('▶', 'spinR'));
+    ui.stage.appendChild(tRow);
+  }
   hudUp();
   if(tut) tutStepTxt();
   raf = requestAnimationFrame(frame);
@@ -6083,7 +6123,7 @@ Object.assign(EN, {
   'Обучение пропущено — вернуться можно в любой момент.':'Tutorial skipped — you can return any time.',
   'Обучение пройдено — можно повторить в любой момент.':'Tutorial completed — you can repeat it any time.',
   'Обучение необязательно: его можно пропустить и вернуться позже.':'Tutorial is optional: skip it now, return later.',
-  'Управление: курсор или палец по кругу, либо ← и →. После смерти — «Ещё раз» или пробел.':'Controls: cursor or finger around, or ← and →. After death — “Retry” or Space.',
+  'Управление: палец или курсор по кругу, кнопки ◀ ▶ на экране или ← и →. После смерти — «Ещё раз» или пробел.':'Controls: finger or cursor around the circle, on-screen ◀ ▶ buttons, or ← and →. After death — “Retry” or Space.',
   '🎓 Обучение пройдено!':'🎓 Tutorial completed!','Вернуться к нему можно в любой момент — оно не запускается само.':'You can return any time — it never starts on its own.',
   '🏠 В меню':'🏠 To menu','🚪 Выйти':'🚪 Exit','🔁 Заново':'🔁 Restart','Ещё раз':'Retry','звук':'sound',
   'Рекорд: {0}':'Best: {0}','Заходов: {0}':'Runs: {0}','очков':'pts','демо':'demo','рекорд':'best',
@@ -6091,7 +6131,11 @@ Object.assign(EN, {
   'Проходов: {0} · лучшая цепь: {1}':'Passes: {0} · best chain: {1}',
   'Набери максимум за один заход. ×5 удерживай как можно дольше.':'Score max in one run. Hold ×5 as long as you can.',
   'Долгое нажатие вскрыло «Пульсар»! Игра закреплена во Вратах Подземелья.':'Long press revealed Pulsar! It is pinned in the Dungeon Gates.',
-  'Пульсар запущен.':'Pulsar launched.'
+  'Пульсар запущен.':'Pulsar launched.','Пульсар':'Pulsar','Открыть игру «Пульсар»':'Open the “Pulsar” game',
+  'Веди пальцем или курсором по кругу, кнопками ◀ ▶ или стрелками ← и →.':'Drive with finger or cursor around the circle, with ◀ ▶ buttons or ← and → keys.',
+  'Кольца сходятся к ядру. Проходи сквозь щель — засчитается проход.':'Rings close in on the core. Pass through the gap to score.',
+  'Золотое кольцо даёт +75. Цепочка проходов поднимает множитель до ×5.':'A golden ring gives +75. A pass chain raises the multiplier up to ×5.',
+  'Каждые 10 проходов — ВСПЛЕСК: два прохода за раз. Всё — жми «Готово»!':'Every 10 passes — SURGE: two passes at once. When done — hit “Done”!'
 });
 
 
