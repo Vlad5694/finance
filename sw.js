@@ -1,5 +1,5 @@
 // Меняйте версию при каждом обновлении приложения, чтобы кэш обновился
-const VERSION = 'finance-v28';
+const VERSION = 'finance-v29';
 const CORE = ['./', './index.html', './manifest.webmanifest', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
